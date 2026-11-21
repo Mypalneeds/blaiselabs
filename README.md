@@ -26,6 +26,15 @@ Joy, Osas and Greg are real-time AI video personas built by **Micheal Blaise, fo
   - **Studio:** ElevenLabs. Set `ELEVENLABS_API_KEY` on Netlify. You can optionally pick a voice for each agent with `ELEVENLABS_VOICE_JOY`, `_OSAS` and `_GREG`.
   - **Basic:** the device's own voice, which plays instantly.
 
+## HD mode (Nuance Labs)
+
+HD mode runs an agent on Nuance's real-time audio-visual model. The agent keeps its name, intro and Analaize facts, but uses one of Nuance's faces: Sam, Sonia or Mira, chosen in the lobby.
+
+- Set `NUANCE_API_KEY` (starts with `nk_`) in Netlify's environment variables and tick **Contains secret values**. The HD toggle then appears in the lobby.
+- HD calls use your Nuance credits and are capped at 10 minutes each.
+- If HD is busy or out of credits, the app switches to standard mode automatically.
+- The SDK is bundled in `public/vendor/nuance-sdk.js` (Apache-2.0).
+
 ## How it works
 
 ```
@@ -72,7 +81,7 @@ Opening `index.html` directly won't work, because the page needs the `/api/chat`
 
 ## Update Joy's memory
 
-Edit `netlify/functions/knowledge.mjs` and write plain facts as bullet points. Then commit and push, and Netlify redeploys in about a minute. All three agents share this memory. They only state facts from this file about themselves, Blaise and Analaize. If a detail isn't there, she says she doesn't know it yet.
+Edit `netlify/lib/knowledge.mjs` and write plain facts as bullet points. Then commit and push, and Netlify redeploys in about a minute. All three agents share this memory. They only state facts from this file about themselves, Blaise and Analaize. If a detail isn't there, she says she doesn't know it yet.
 
 To change how a name is *pronounced* (but not spelled in captions), edit `PRONOUNCE` in `public/js/voice.js`.
 

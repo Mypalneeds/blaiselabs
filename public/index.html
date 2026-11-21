@@ -24,8 +24,15 @@
     <section>
       <h2 class="label">Choose who to talk to</h2>
       <div id="personas" class="personas"></div>
+      <label id="hdRow" class="hd-row" hidden>
+        <input id="hdToggle" type="checkbox" />
+        <span><strong>HD mode ✨</strong><small>Live video AI by Nuance Labs: the most human feel, using one of their faces. Uses your Nuance credits.</small></span>
+      </label>
+      <div id="hdFaces" class="hd-faces" hidden></div>
+      <div id="skinSection">
       <h2 id="skinLabel" class="label skin-label">Skin tone</h2>
       <div id="lobbySwatches" class="swatches"></div>
+      </div>
       <p class="hint">Tip: you can also just ask, e.g. "Can you make your skin darker?" Turn your camera on during a call so they can react to your face, and pick "Natural" voice in ⚙︎ Settings for a more human sound.</p>
     </section>
 
@@ -40,9 +47,11 @@
   <!-- Call -->
   <main id="call" class="call" hidden>
     <div id="stage" class="stage"></div>
+    <video id="hdVideo" class="hd-video" autoplay playsinline></video>
+    <audio id="hdAudio" autoplay></audio>
 
     <div class="topbar">
-      <div class="who"><span id="personaName">Joy</span><span class="ai-badge">AI</span></div>
+      <div class="who"><span id="personaName">Joy</span><span class="ai-badge">AI</span><span id="hdTag" class="ai-badge hd-badge" hidden>HD</span></div>
       <div id="status" class="status" data-state="idle">Ready</div>
     </div>
 

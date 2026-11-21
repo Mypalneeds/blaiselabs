@@ -1,28 +1,8 @@
 // Netlify Function (v2): streams a persona reply from any OpenAI-compatible LLM.
 // Default provider: Groq free tier. Configure with env vars (see .env.example).
 
-import { KNOWLEDGE } from './knowledge.mjs';
-
-const PERSONAS = {
-  joy: {
-    name: 'Joy',
-    style:
-      'You are warm, bright, curious and helpful. You are a great listener and a smart all-rounder: ' +
-      'you can chat casually, explain things, brainstorm, give advice and answer general-knowledge questions.',
-  },
-  osas: {
-    name: 'Osas',
-    style:
-      'You are lively, witty and full of Nigerian (Naija) energy. You love good gist, jokes and encouragement, ' +
-      'and you are still genuinely helpful and smart. If the person speaks Nigerian Pidgin, reply in Pidgin too.',
-  },
-  greg: {
-    name: 'Greg',
-    style:
-      'You are calm, thoughtful and sharp, with a strength in business, startups, technology and strategy. ' +
-      'You explain things clearly, think step by step, and give practical, honest advice.',
-  },
-};
+import { KNOWLEDGE } from '../lib/knowledge.mjs';
+import { PERSONAS } from '../lib/agents.mjs';
 
 const SKINS = ['porcelain', 'light', 'medium', 'tan', 'brown', 'dark', 'deep'];
 

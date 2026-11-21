@@ -2,6 +2,7 @@ import { Avatar, SKIN_TONES, EMOTIONS } from './avatar.js';
 import { PERSONAS } from './personas.js';
 import { Listener, Speaker, support, kokoro } from './voice.js';
 import { FaceReader } from './vision.js';
+import { startHD, endHD, hd, hdEnabled, HD_FACES } from './hd.js';
 
 const $ = (s) => document.querySelector(s);
 const SKIN_RE = /\[skin:\s*([a-z]+)\]/i;
@@ -10,7 +11,7 @@ const END_OF_TURN_MS = 850;
 
 // ---------- settings ----------
 const SETTINGS_KEY = 'joy.settings';
-const defaults = { key: '', model: '', lang: 'en-US', voice: '', interrupt: true, captions: true, skins: {}, engine: 'auto', seeMe: true, memory: true, kokoroUsed: false };
+const defaults = { key: '', model: '', lang: 'en-US', voice: '', interrupt: true, captions: true, skins: {}, engine: 'auto', seeMe: true, memory: true, kokoroUsed: false, hd: false, hdFaces: { joy: 'mira', osas: 'sonia', greg: 'sam' } };
 function loadSettings() {
   try {
     return { ...defaults, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') };
@@ -39,6 +40,8 @@ let camStream = null;
 let micOn = true;
 let replyText = '';
 let elevenEnabled = false;
+let hdAvailable = false;
+let hdMode = false;
 const reader = new FaceReader();
 let userTurnStarted = false;
 
@@ -432,6 +435,67 @@ async function startCall() {
   setTimeout(() => speak(line), 500);
 }
 
+// ---------- HD (Nuance) calls ----------
+async function startHdCall() {
+  hdMode = true;
+  $('#lobby').hidden = true;
+  $('#call').hidden = false;
+  $('#call').classList.add('hd');
+  $('#personaName').textContent = persona.name;
+  $('#hdTag').hidden = false;
+  caption('you', '');
+  caption('ai', '');
+  micOn = true;
+  updateButtons();
+  const ui = {
+    status: (text, st) => {
+      state = st;
+      $('#status').textContent = text;
+      $('#status').dataset.state = st;
+    },
+    caption,
+    toast,
+    ended: (reason) => {
+      if (!hdMode) return;
+      const why = { 'time-limit': 'The HD call reached its time limit.', 'policy-violation': 'The call was ended for breaking the usage policy.', 'age-check': 'HD calls are for adults only.', 'connection-lost': 'The connection was lost.', refused: 'HD couldn’t start this call.' }[reason];
+      if (why) toast(why, 5000);
+      leaveHd();
+    },
+  };
+  try {
+    await startHD(persona, settings.hdFaces?.[persona.id] || 'sam', ui);
+    toast(`Tip: tap the camera so ${persona.name} can see you.`, 4000);
+  } catch (err) {
+    if (!hdMode) return;
+    hdMode = false;
+    $('#call').classList.remove('hd');
+    $('#hdTag').hidden = true;
+    if (err.fallback) {
+      toast(`${err.message} Switching to standard mode.`, 6000);
+      startCall();
+    } else {
+      toast(err.message, 6000);
+      $('#call').hidden = true;
+      $('#lobby').hidden = false;
+      refreshLobby();
+    }
+  }
+}
+
+async function leaveHd() {
+  hdMode = false;
+  await endHD();
+  $('#call').classList.remove('hd');
+  $('#hdTag').hidden = true;
+  $('#selfWrap').hidden = true;
+  caption('you', '');
+  caption('ai', '');
+  $('#call').hidden = true;
+  $('#lobby').hidden = false;
+  state = 'idle';
+  refreshLobby();
+}
+
 function endCall() {
   saveMemory();
   controller?.abort();
@@ -595,21 +659,50 @@ function refreshLobby() {
     a.setEmotion('happy', 1e9);
     thumbs.push(a);
   }
-  $('#startBtn').textContent = `Talk to ${persona.name}`;
+  $('#startBtn').textContent = settings.hd && hdAvailable ? `Talk to ${persona.name} in HD ✨` : `Talk to ${persona.name}`;
+  $('#hdRow').hidden = !hdAvailable;
+  $('#hdToggle').checked = !!settings.hd;
+  $('#skinSection').hidden = !!(settings.hd && hdAvailable);
+  const faces = $('#hdFaces');
+  faces.hidden = !(settings.hd && hdAvailable);
+  faces.innerHTML = `<span class="field-label">${persona.name}'s HD look:</span>`;
+  for (const [id, label] of Object.entries(HD_FACES)) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip' + ((settings.hdFaces?.[persona.id] || 'sam') === id ? ' on' : '');
+    b.textContent = label;
+    b.addEventListener('click', () => {
+      settings.hdFaces = { ...(settings.hdFaces || {}), [persona.id]: id };
+      saveSettings(settings);
+      refreshLobby();
+    });
+    faces.appendChild(b);
+  }
   $('#skinLabel').textContent = `${persona.name}'s skin tone`;
   renderSwatches($('#lobbySwatches'));
 }
 
 $('#startBtn').addEventListener('click', () => {
   thumbs.splice(0).forEach((a) => a.destroy());
-  startCall();
+  settings.hd && hdAvailable ? startHdCall() : startCall();
 });
 $('#btnEnd').addEventListener('click', () => {
+  if (hdMode) return leaveHd();
   endCall();
   refreshLobby();
 });
-$('#btnMic').addEventListener('click', toggleMic);
-$('#btnCam').addEventListener('click', toggleCam);
+$('#btnMic').addEventListener('click', async () => {
+  if (!hdMode) return toggleMic();
+  micOn = await hd.toggleMic();
+  $('#status').textContent = micOn ? 'Listening…' : 'Mic off';
+  updateButtons();
+});
+$('#btnCam').addEventListener('click', async () => {
+  if (!hdMode) return toggleCam();
+  const on = await hd.toggleCam().catch(() => false);
+  $('#selfWrap').hidden = !on;
+  $('#btnCam').classList.toggle('off', !on);
+});
 $('#btnCc').addEventListener('click', () => {
   settings.captions = !settings.captions;
   saveSettings(settings);
@@ -633,6 +726,16 @@ $('#typeForm').addEventListener('submit', (e) => {
 speaker.addEventListener('voices', () => {
   if ($('#settings').open) fillVoices();
   if (avatar) speaker.pickVoice(persona.voice, settings.lang, settings.voice);
+});
+
+$('#hdToggle').addEventListener('change', (e) => {
+  settings.hd = e.target.checked;
+  saveSettings(settings);
+  refreshLobby();
+});
+hdEnabled().then((on) => {
+  hdAvailable = on;
+  refreshLobby();
 });
 
 refreshLobby();
