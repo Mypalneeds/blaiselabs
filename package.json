@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "netlify dev",
-    "check": "node --check netlify/functions/chat.mjs && node --check netlify/functions/knowledge.mjs && node --check public/js/app.js && node --check public/js/avatar.js && node --check public/js/voice.js && node --check public/js/personas.js"
+    "check": "node --check netlify/functions/chat.mjs && node --check netlify/functions/knowledge.mjs && node --check public/js/app.js && node --check public/js/avatar.js && node --check public/js/voice.js && node --check public/js/personas.js && node --check public/js/vision.js && node --check public/js/tts-worker.js && node --check netlify/functions/tts.mjs"
   },
   "engines": {
     "node": ">=18"

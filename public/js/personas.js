@@ -2,6 +2,7 @@
 // in netlify/functions/chat.mjs (same ids) so the endpoint can't be used as a general LLM proxy.
 // `skin` is the default tone; users can change it (see SKIN_TONES in avatar.js).
 
+const back = (name) => `[happy] Hey, welcome back! It's ${name}. Good to see you again — what's new?`;
 const intro = (name, emotion = 'happy') =>
   `[${emotion}] Hi! My name is ${name}. I was built by Micheal Blaise, the founder of Analaize Limited. What would you like to talk about?`;
 
@@ -12,7 +13,8 @@ export const PERSONAS = {
     tagline: 'Warm, bright all-rounder',
     skin: 'brown',
     greeting: intro('Joy'),
-    voice: { prefer: ['Samantha', 'Google UK English Female', 'Microsoft Aria', 'Microsoft Jenny', 'Microsoft Sonia', 'Karen', 'Moira', 'Tessa', 'Female'], gender: 'female', pitch: 1.08, rate: 1.02 },
+    welcomeBack: back('Joy'),
+    voice: { prefer: ['Samantha', 'Google UK English Female', 'Microsoft Aria', 'Microsoft Jenny', 'Microsoft Sonia', 'Karen', 'Moira', 'Tessa', 'Female'], gender: 'female', pitch: 1.08, rate: 1.02, kokoro: 'af_heart' },
     look: {
       name: 'Joy',
       bg: ['#ffe9d6', '#f2a97e'],
@@ -41,7 +43,8 @@ export const PERSONAS = {
     tagline: 'Lively, witty, full of Naija energy',
     skin: 'dark',
     greeting: intro('Osas', 'laugh'),
-    voice: { prefer: ['Google UK English Female', 'Microsoft Libby', 'Microsoft Ezinne', 'Microsoft Sonia', 'Moira', 'Tessa', 'Karen', 'Samantha', 'Female'], gender: 'female', pitch: 1.18, rate: 1.06 },
+    welcomeBack: "[laugh] Ahh, you're back! It's Osas. How far, what's the gist?",
+    voice: { prefer: ['Google UK English Female', 'Microsoft Libby', 'Microsoft Ezinne', 'Microsoft Sonia', 'Moira', 'Tessa', 'Karen', 'Samantha', 'Female'], gender: 'female', pitch: 1.18, rate: 1.06, kokoro: 'af_bella', kokoroSpeed: 1.05 },
     look: {
       name: 'Osas',
       bg: ['#fff3c4', '#e9a23b'],
@@ -70,7 +73,8 @@ export const PERSONAS = {
     tagline: 'Calm, sharp business & tech mind',
     skin: 'tan',
     greeting: intro('Greg', 'curious'),
-    voice: { prefer: ['Daniel', 'Google UK English Male', 'Microsoft Guy', 'Microsoft Ryan', 'Microsoft Davis', 'Alex', 'Fred', 'Male'], gender: 'male', pitch: 0.92, rate: 1.0 },
+    welcomeBack: back('Greg'),
+    voice: { prefer: ['Daniel', 'Google UK English Male', 'Microsoft Guy', 'Microsoft Ryan', 'Microsoft Davis', 'Alex', 'Fred', 'Male'], gender: 'male', pitch: 0.92, rate: 1.0, kokoro: 'am_michael' },
     look: {
       name: 'Greg',
       bg: ['#dde8ff', '#7d93d8'],

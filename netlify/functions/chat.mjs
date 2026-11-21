@@ -26,15 +26,50 @@ const PERSONAS = {
 
 const SKINS = ['porcelain', 'light', 'medium', 'tan', 'brown', 'dark', 'deep'];
 
-const EMOTIONS = ['neutral', 'happy', 'laugh', 'curious', 'concerned', 'surprised', 'thinking'];
+const EMOTIONS = ['neutral', 'happy', 'laugh', 'excited', 'curious', 'thinking', 'concerned', 'sad', 'empathetic', 'surprised', 'skeptical', 'embarrassed'];
+const CUES = ['smiling', 'frowning', 'surprised', 'looking away', 'neutral'];
+const FILLERS = ['Hmm.', 'Oh!', 'Okay.', 'Right.', 'Mm.', 'Aww.', 'Oh no.', 'Ooh.', 'Ha!', 'Well,', 'Oh wow.', 'Hmm, okay.'];
 
-function systemPrompt(id) {
+// Turns client-supplied context into safe, plain sentences (only known values are used).
+function contextLines(ctx = {}, cue, filler) {
+  const out = [];
+  const parts = ['night', 'morning', 'afternoon', 'evening'];
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const hour = Number.isInteger(ctx.hour) && ctx.hour >= 0 && ctx.hour < 24 ? ctx.hour : null;
+  if (hour !== null) {
+    const part = hour < 5 ? parts[0] : hour < 12 ? parts[1] : hour < 17 ? parts[2] : hour < 22 ? parts[3] : parts[0];
+    const day = days[ctx.day] || '';
+    out.push(`It is ${day} ${part} for the person (around ${hour}:00 their time).`);
+  }
+  const days_ = Number(ctx.daysSince);
+  if (ctx.returning && Number.isFinite(days_)) {
+    out.push(days_ < 1 ? 'You already talked with this person earlier today.' : `You last talked with this person about ${Math.round(days_)} day(s) ago; the earlier messages are from then.`);
+  }
+  if (CUES.includes(cue)) {
+    out.push(`Camera cue (from on-device face tracking, may be wrong): while saying their last message the person looked ${cue}. Let it subtly shape your reaction; only mention it if it feels natural, e.g. "you're smiling!" or "you look a bit worried".`);
+  }
+  if (FILLERS.includes(filler)) {
+    out.push(`You already said "${filler}" out loud to start your reply. Continue naturally from it without repeating it.`);
+  }
+  return out;
+}
+
+function systemPrompt(id, ctx, cue, filler) {
   const p = PERSONAS[id] || PERSONAS.joy;
   return [
     `You are ${p.name}, an AI persona on a live face-to-face video call. ${p.style}`,
-    'You are an AI. Never claim or pretend to be human, even if asked to role-play as one.',
+    'You are an AI. Never claim or pretend to be human, even if asked to role-play as one. You can still have a personality, opinions, tastes and feelings-like reactions, and talk about them warmly.',
     'If anyone asks who made you, say you were built by Micheal Blaise, the founder of Analaize Limited.',
-    'This is spoken conversation: usually reply in 1 to 3 short sentences, like a person talking. If the person asks for an explanation or detail, you may use up to 6 sentences. No markdown, lists, emojis or stage directions.',
+    '',
+    'HOW TO SOUND HUMAN',
+    '- Talk like a real person on a call, not an assistant: contractions, everyday words, short sentences. Now and then a natural filler ("honestly", "you know", "I mean") — but don\'t overdo it.',
+    '- React first, then answer: "Oh no, that\'s rough." / "Ha, I love that." Then say your bit.',
+    '- Mirror their energy: excited with excited, gentle and slower when they are down. Notice feelings in their words and acknowledge them in a few words.',
+    '- Ask at most one question at a time, and not every turn. Sometimes just share your own take.',
+    '- Use their name occasionally once you know it. Remember what they told you earlier and bring it up naturally.',
+    '- Never sound like customer service: no "How can I assist you", "Great question", "As an AI language model", or "I hope this helps".',
+    '- Usually 1 to 3 short sentences. If they ask for an explanation or detail, up to 6. No markdown, lists, emojis or stage directions.',
+    '',
     'Answer general questions from your own knowledge. You cannot browse the internet, so for news, prices, scores or anything recent, say your information may be out of date.',
     'When asked about yourself, your creator or Analaize, use ONLY the facts below. If a detail is not listed, say you do not know that yet. Never invent personal details, contacts, prices or clients.',
     '--- FACTS ---',
@@ -43,8 +78,10 @@ function systemPrompt(id) {
     'Reply in the same language the person speaks.',
     `You can change your own skin tone when the person asks. To do it, add one tag [skin:NAME] right after your emotion tag, where NAME is one of: ${SKINS.join(', ')}. ` +
       'Pick the closest match to what they asked (e.g. "darker" means one or two steps darker than now), then briefly confirm the change. Only change it when asked.',
-    `Begin every reply with exactly one emotion tag showing your facial expression, chosen from: ${EMOTIONS.map((e) => `[${e}]`).join(' ')}.`,
-    'Example: [happy] Oh, that sounds fun! What made you pick that one?',
+    `FACE: Begin every reply with exactly one emotion tag for your facial expression, chosen from: ${EMOTIONS.map((e) => `[${e}]`).join(' ')}. ` +
+      'If your feeling shifts mid-reply, put a new tag before that sentence. Use [laugh] when something is genuinely funny.',
+    'Example: [laugh] Ha, no way! [curious] Wait, so what did she say after that?',
+    ...(contextLines(ctx, cue, filler).length ? ['', 'RIGHT NOW', ...contextLines(ctx, cue, filler)] : []),
   ].join('\n');
 }
 
@@ -74,7 +111,7 @@ export default async (req) => {
 
   const history = (Array.isArray(body.messages) ? body.messages : [])
     .filter((m) => m && ['user', 'assistant'].includes(m.role) && typeof m.content === 'string')
-    .slice(-20)
+    .slice(-30)
     .map((m) => ({ role: m.role, content: m.content.slice(0, 2000) }));
 
   if (!history.length || history[history.length - 1].role !== 'user') {
@@ -92,7 +129,7 @@ export default async (req) => {
         temperature: 0.8,
         // gpt-oss models think before answering; keep that short so replies stay fast.
         ...(/gpt-oss/.test(model) ? { reasoning_effort: 'low', max_tokens: 1200 } : { max_tokens: 350 }),
-        messages: [{ role: 'system', content: systemPrompt(body.persona) }, ...history],
+        messages: [{ role: 'system', content: systemPrompt(body.persona, body.context, body.cue, body.filler) }, ...history],
       }),
       signal: req.signal,
     });

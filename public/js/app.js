@@ -1,15 +1,16 @@
-import { Avatar, SKIN_TONES } from './avatar.js';
+import { Avatar, SKIN_TONES, EMOTIONS } from './avatar.js';
 import { PERSONAS } from './personas.js';
-import { Listener, Speaker, support } from './voice.js';
+import { Listener, Speaker, support, kokoro } from './voice.js';
+import { FaceReader } from './vision.js';
 
 const $ = (s) => document.querySelector(s);
 const SKIN_RE = /\[skin:\s*([a-z]+)\]/i;
-const EMOTION_RE = /\[(neutral|happy|laugh|curious|concerned|surprised|thinking)\]/i;
+const EMOTION_RE = new RegExp(`\\[(${EMOTIONS.join('|')})\\]`, 'i');
 const END_OF_TURN_MS = 850;
 
 // ---------- settings ----------
 const SETTINGS_KEY = 'joy.settings';
-const defaults = { key: '', model: '', lang: 'en-US', voice: '', interrupt: true, captions: true, skins: {} };
+const defaults = { key: '', model: '', lang: 'en-US', voice: '', interrupt: true, captions: true, skins: {}, engine: 'auto', seeMe: true, memory: true, kokoroUsed: false };
 function loadSettings() {
   try {
     return { ...defaults, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') };
@@ -37,6 +38,98 @@ let controller = null;
 let camStream = null;
 let micOn = true;
 let replyText = '';
+let elevenEnabled = false;
+const reader = new FaceReader();
+let userTurnStarted = false;
+
+// ---------- memory (stays on this device) ----------
+const MEM_PREFIX = 'joy.memory.';
+function loadMemory(id) {
+  if (!settings.memory) return null;
+  try {
+    return JSON.parse(localStorage.getItem(MEM_PREFIX + id) || 'null');
+  } catch {
+    return null;
+  }
+}
+function saveMemory() {
+  if (!settings.memory || !persona) return;
+  const keep = messages.filter((m) => m.role === 'user' || m.role === 'assistant').slice(-24);
+  if (!keep.some((m) => m.role === 'user')) return;
+  try {
+    localStorage.setItem(MEM_PREFIX + persona.id, JSON.stringify({ messages: keep, lastSeen: Date.now() }));
+  } catch {}
+}
+function forgetAll() {
+  for (const id of Object.keys(PERSONAS)) localStorage.removeItem(MEM_PREFIX + id);
+}
+let memoryAtStart = null;
+function context() {
+  const d = new Date();
+  const ctx = { hour: d.getHours(), day: d.getDay() };
+  if (memoryAtStart) {
+    ctx.returning = true;
+    ctx.daysSince = Math.max(0, (Date.now() - memoryAtStart.lastSeen) / 864e5);
+  }
+  return ctx;
+}
+
+// ---------- voices ----------
+function wantedEngine() {
+  const english = settings.lang.startsWith('en');
+  const e = settings.engine;
+  if (e === 'eleven') return elevenEnabled ? 'eleven' : 'browser';
+  if (e === 'kokoro') return english && support.audio ? 'kokoro' : 'browser';
+  if (e === 'browser') return 'browser';
+  // auto: studio voice if the site owner set it up, else the natural voice if downloaded before
+  if (elevenEnabled) return 'eleven';
+  if (settings.kokoroUsed && english && support.audio) return 'kokoro';
+  return 'browser';
+}
+async function applyEngine() {
+  const want = wantedEngine();
+  if (want === 'kokoro' && kokoro.state !== 'ready') {
+    speaker.setEngine('browser', persona); // talk with the device voice while downloading
+    try {
+      await kokoro.load();
+      settings.kokoroUsed = true;
+      saveSettings(settings);
+      if (wantedEngine() !== 'kokoro') return;
+      toast('Natural voice ready ✨', 2500);
+    } catch (err) {
+      toast(`Natural voice couldn't load on this device (${err.message}). Using the device voice.`, 6000);
+      return;
+    }
+  }
+  speaker.setEngine(want, persona);
+  speaker.prepare(FILLER_LIST);
+}
+kokoro.addEventListener('progress', (e) => toast(`Downloading natural voice… ${Math.round(e.detail * 100)}% (one time only)`, 4000));
+fetch('/api/tts').then((r) => r.ok && r.json()).then((j) => (elevenEnabled = !!j?.enabled)).catch(() => {});
+
+// ---------- fillers: an instant human reaction while the AI thinks ----------
+const FILLERS = {
+  question: ['Hmm.', 'Hmm, okay.', 'Well,'],
+  sad: ['Aww.', 'Oh no.'],
+  happy: ['Oh!', 'Ooh.', 'Oh wow.'],
+  funny: ['Ha!'],
+  other: ['Mm.', 'Right.', 'Okay.'],
+};
+const FILLER_LIST = Object.values(FILLERS).flat();
+const FILLER_FACE = { question: 'thinking', sad: 'empathetic', happy: 'excited', funny: 'laugh', other: 'neutral' };
+function pickFiller(text) {
+  const t = text.toLowerCase();
+  let kind = 'other';
+  if (/\b(haha|lol|lmao|funny|joke)\b|😂/.test(t)) kind = 'funny';
+  else if (/\b(sad|tired|stress|stressed|sick|lost|died|passed|bad day|worried|angry|broke|hurt|lonely|scared|anxious|failed)\b/.test(t)) kind = 'sad';
+  else if (/\b(great|amazing|won|win|got the|happy|excited|love|yay|finally|promoted|passed my|engaged|married|birthday)\b/.test(t)) kind = 'happy';
+  else if (/\?\s*$/.test(t) || /^(what|how|why|who|when|where|which|can|could|should|would|do|does|is|are|tell me|explain)\b/.test(t)) kind = 'question';
+  const chance = kind === 'other' ? 0.3 : 0.65;
+  if (text.split(/\s+/).length < 3 || Math.random() > chance) return null;
+  const list = FILLERS[kind];
+  const filler = list[Math.floor(Math.random() * list.length)];
+  return speaker.isReady(filler) ? { filler, face: FILLER_FACE[kind] } : null;
+}
 
 // ---------- skin tones ----------
 const skinOf = (p) => settings.skins?.[p.id] || p.skin;
@@ -108,6 +201,10 @@ function onInterim(text) {
     if (!settings.interrupt || isEcho(text) || words < 2) return;
     interrupt();
   }
+  if (!userTurnStarted) {
+    userTurnStarted = true;
+    reader.beginTurn();
+  }
   avatar.userPulse(words);
   caption('you', (pending + ' ' + text).trim());
   armTurnTimer();
@@ -158,11 +255,18 @@ function interrupt() {
 async function send(text) {
   messages.push({ role: 'user', content: text });
   caption('you', text);
+  const cue = reader.summary();
+  userTurnStarted = false;
   setState('thinking');
   avatar.nod(0.6);
   speaker.cancel();
   speaker.resetTranscript();
   replyText = '';
+  const f = pickFiller(text);
+  if (f) {
+    avatar.setEmotion(f.face, 1500);
+    speak(f.filler);
+  }
 
   controller = new AbortController();
   const myController = controller;
@@ -203,7 +307,7 @@ async function send(text) {
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers,
-      body: JSON.stringify({ persona: persona.id, messages }),
+      body: JSON.stringify({ persona: persona.id, messages, context: context(), cue, filler: f?.filler }),
       signal: myController.signal,
     });
     if (!res.ok) {
@@ -213,12 +317,17 @@ async function send(text) {
       } catch {}
       throw Object.assign(new Error(e.error || `HTTP ${res.status}`), { code: e.error, detail: e.detail, status: res.status });
     }
-    const reader = res.body.getReader();
+    const stream = res.body.getReader();
     const dec = new TextDecoder();
+    let first = true;
     for (;;) {
-      const { done, value } = await reader.read();
+      const { done, value } = await stream.read();
       if (done) break;
       const chunk = dec.decode(value, { stream: true });
+      if (first && chunk.trim()) {
+        first = false;
+        avatar.breathe();
+      }
       replyText += chunk;
       buf += chunk;
       if (!skinApplied) {
@@ -233,8 +342,9 @@ async function send(text) {
     }
     flush(true);
     if (controller === myController) controller = null;
-    if (replyText.trim()) messages.push({ role: 'assistant', content: replyText.trim() });
+    if (replyText.trim()) messages.push({ role: 'assistant', content: ((f ? f.filler + ' ' : '') + replyText).trim() });
     replyText = '';
+    saveMemory();
     if (!speaker.speaking) setState('listening');
   } catch (err) {
     if (err.name === 'AbortError') return;
@@ -260,9 +370,12 @@ function speak(sentence) {
 speaker.addEventListener('sentence', (e) => {
   setState('speaking');
   avatar.speaking(true);
+  avatar.sentenceStart(e.detail);
   caption('ai', e.detail);
 });
 speaker.addEventListener('word', (e) => avatar.viseme(e.detail));
+speaker.addEventListener('level', (e) => avatar?.audioLevel(e.detail));
+reader.addEventListener('update', (e) => avatar?.watchUser(e.detail));
 speaker.addEventListener('idle', () => {
   avatar.speaking(false);
   if (!controller) setState('listening');
@@ -280,8 +393,11 @@ async function startCall() {
   avatar.svg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
   avatar.setSkin(skinOf(persona));
   speaker.pickVoice(persona.voice, settings.lang, settings.voice);
-  messages = [];
+  applyEngine();
+  memoryAtStart = loadMemory(persona.id);
+  messages = memoryAtStart?.messages ? [...memoryAtStart.messages] : [];
   pending = '';
+  userTurnStarted = false;
 
   if (support.stt) {
     listener?.stop();
@@ -307,7 +423,7 @@ async function startCall() {
 
   // Opening line
   setState('speaking');
-  const g = persona.greeting;
+  const g = memoryAtStart ? persona.welcomeBack : persona.greeting;
   const em = g.match(EMOTION_RE);
   if (em) avatar.setEmotion(em[1].toLowerCase());
   const line = clean(g).trim();
@@ -317,6 +433,7 @@ async function startCall() {
 }
 
 function endCall() {
+  saveMemory();
   controller?.abort();
   controller = null;
   listener?.stop();
@@ -338,13 +455,28 @@ async function toggleCam() {
     camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 }, audio: false });
     $('#selfView').srcObject = camStream;
     $('#selfWrap').hidden = false;
+    if (settings.seeMe) startSeeing();
   } catch {
     toast('Camera unavailable or blocked.');
   }
   updateButtons();
 }
 
+async function startSeeing() {
+  $('#seeBadge').hidden = false;
+  $('#seeBadge').textContent = 'Starting face reading…';
+  try {
+    await reader.start($('#selfView'));
+    $('#seeBadge').textContent = `👀 ${persona.name} can see you`;
+  } catch (err) {
+    $('#seeBadge').hidden = true;
+    toast(`Face reading unavailable on this device (${err.message || err}).`, 5000);
+  }
+}
+
 function stopCam() {
+  reader.stop();
+  $('#seeBadge').hidden = true;
   camStream?.getTracks().forEach((t) => t.stop());
   camStream = null;
   $('#selfWrap').hidden = true;
@@ -385,6 +517,10 @@ function openSettings() {
   $('#setModel').value = settings.model;
   $('#setLang').value = settings.lang;
   $('#setInterrupt').checked = settings.interrupt;
+  $('#setEngine').value = settings.engine;
+  $('#setSeeMe').checked = settings.seeMe;
+  $('#setMemory').checked = settings.memory;
+  $('#elevenNote').hidden = elevenEnabled;
   fillVoices();
   renderSwatches($('#settingsSwatches'));
   $('#settingsSkinLabel').textContent = `${persona.name}'s skin tone`;
@@ -409,8 +545,18 @@ $('#settingsForm').addEventListener('submit', (e) => {
     lang: $('#setLang').value,
     voice: $('#setVoice').value,
     interrupt: $('#setInterrupt').checked,
+    engine: $('#setEngine').value,
+    seeMe: $('#setSeeMe').checked,
+    memory: $('#setMemory').checked,
   };
   saveSettings(settings);
+  if (avatar) applyEngine();
+  else if (wantedEngine() === 'kokoro' || settings.engine === 'kokoro') kokoro.load().catch(() => {});
+  if (camStream && settings.seeMe && !reader.running) startSeeing();
+  if (!settings.seeMe && reader.running) {
+    reader.stop();
+    $('#seeBadge').hidden = true;
+  }
   speaker.pickVoice(persona.voice, settings.lang, settings.voice);
   if (langChanged) listener?.setLang(settings.lang);
   $('#settings').close();
@@ -418,6 +564,12 @@ $('#settingsForm').addEventListener('submit', (e) => {
 });
 $('#settingsCancel').addEventListener('click', () => $('#settings').close());
 $('#clearKey').addEventListener('click', () => ($('#setKey').value = ''));
+$('#forgetBtn').addEventListener('click', () => {
+  forgetAll();
+  if (avatar) messages = messages.slice(-2);
+  memoryAtStart = null;
+  toast('Conversation memory cleared on this device.', 3000);
+});
 
 // ---------- wiring ----------
 const thumbs = [];

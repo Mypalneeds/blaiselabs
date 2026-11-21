@@ -26,7 +26,7 @@
       <div id="personas" class="personas"></div>
       <h2 id="skinLabel" class="label skin-label">Skin tone</h2>
       <div id="lobbySwatches" class="swatches"></div>
-      <p class="hint">Tip: you can also just ask, e.g. "Can you make your skin darker?"</p>
+      <p class="hint">Tip: you can also just ask, e.g. "Can you make your skin darker?" Turn your camera on during a call so they can react to your face, and pick "Natural" voice in ⚙︎ Settings for a more human sound.</p>
     </section>
 
     <button id="startBtn" class="primary" type="button">Start call</button>
@@ -46,7 +46,7 @@
       <div id="status" class="status" data-state="idle">Ready</div>
     </div>
 
-    <div id="selfWrap" class="self" hidden><video id="selfView" autoplay playsinline muted></video></div>
+    <div id="selfWrap" class="self" hidden><video id="selfView" autoplay playsinline muted></video><span id="seeBadge" class="see-badge" hidden></span></div>
 
     <div class="captions" aria-live="polite">
       <p id="capAi" class="cap ai" hidden></p>
@@ -62,7 +62,7 @@
       <button id="btnMic" class="ctl" type="button" aria-label="Microphone" title="Microphone">
         <svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12h-2Z"/></svg>
       </button>
-      <button id="btnCam" class="ctl off" type="button" aria-label="Camera" title="Camera (self-view)">
+      <button id="btnCam" class="ctl off" type="button" aria-label="Camera" title="Camera: lets them see your expressions (processed on your device)">
         <svg viewBox="0 0 24 24"><path d="M15 8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2.5l5 3.5V7l-5 3.5V8Z"/></svg>
       </button>
       <button id="btnCc" class="ctl" type="button" aria-label="Captions" title="Captions">
@@ -109,7 +109,17 @@
         </select>
       </label>
 
-      <label>Voice
+      <label>Voice quality
+        <select id="setEngine">
+          <option value="auto">Auto (best available)</option>
+          <option value="kokoro">Natural (free, ~90 MB one-time download)</option>
+          <option value="eleven">Studio (ElevenLabs)</option>
+          <option value="browser">Basic (device voice, instant)</option>
+        </select>
+        <small id="elevenNote">Studio voice needs ELEVENLABS_API_KEY set on Netlify. Natural voice is English-only and works best on laptops and recent phones.</small>
+      </label>
+
+      <label>Device voice <small>(used by "Basic")</small>
         <select id="setVoice"></select>
       </label>
 
@@ -119,6 +129,9 @@
       </div>
 
       <label class="check"><input id="setInterrupt" type="checkbox" /> Let me interrupt while they're talking</label>
+      <label class="check"><input id="setSeeMe" type="checkbox" /> When my camera is on, read my expressions <small>(on-device only)</small></label>
+      <label class="check"><input id="setMemory" type="checkbox" /> Remember our conversations on this device</label>
+      <button id="forgetBtn" type="button" class="ghost danger-text">Forget all conversations</button>
 
       <div class="actions">
         <button id="settingsCancel" type="button" class="ghost">Cancel</button>

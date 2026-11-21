@@ -9,6 +9,23 @@ Joy, Osas and Greg are real-time AI video personas built by **Micheal Blaise, fo
 - **No build step:** plain HTML, CSS and JS, plus one serverless function
 - **Phone-first UI:** captions, a typing fallback, an optional camera self-view, and settings for language and voice
 
+## What makes them feel human
+
+- **Faces:** they have 12 emotions, including laugh, excited, sad, empathetic, skeptical and embarrassed, which they can switch mid-sentence. They also show:
+  - micro-expressions and lopsided brows
+  - blinks timed to glances, and tiny eye movements
+  - a visible breath before answering
+  - nods and head tilts timed to their sentences
+  - lip-sync driven by the actual audio
+- **Instant reactions:** while the AI thinks, they say a quick "Hmm," "Oh!" or "Aww," fitted to what you said, so there's never dead silence.
+- **Conversation style:** they react before answering, mirror your energy, pick up on feelings, use your name and avoid customer-service phrasing.
+- **Camera (optional):** your face is read on your device with MediaPipe, and nothing is uploaded. They keep eye contact, smile when you smile, look concerned when you frown, and the AI is told how you looked while speaking.
+- **Memory:** each agent remembers recent conversations on your device, greets you with "welcome back" and knows the time of day. You can clear this in Settings with **Forget all conversations**.
+- **Voices** (Settings → Voice quality):
+  - **Natural:** Kokoro, a free open-source neural voice that runs in the browser. It needs a one-time download of about 90 MB and only speaks English.
+  - **Studio:** ElevenLabs. Set `ELEVENLABS_API_KEY` on Netlify. You can optionally pick a voice for each agent with `ELEVENLABS_VOICE_JOY`, `_OSAS` and `_GREG`.
+  - **Basic:** the device's own voice, which plays instantly.
+
 ## How it works
 
 ```
@@ -37,6 +54,7 @@ The avatar is fully procedural, drawn in SVG, and needs no video model. It blink
 4. **Environment variables:** open **Site configuration → Environment variables** and add:
    - `LLM_API_KEY`: your Groq key
    - `LLM_MODEL` (optional): defaults to `openai/gpt-oss-20b`
+   - `ELEVENLABS_API_KEY` (optional): turns on Studio voices
    - `LLM_BASE_URL` (optional): defaults to Groq. OpenRouter and Gemini's OpenAI-compatible endpoint also work (see `.env.example`).
 5. Redeploy and open the site on your phone. Allow microphone access when asked.
 
