@@ -112,27 +112,41 @@ export default async (req) => {
   let buffer = '';
 
   const stream = new ReadableStream({
+    // Keep reading until at least one token is sent (or the stream ends).
+    // Reasoning models send many chunks with no visible text; returning from
+    // pull() without enqueuing anything would stall the stream forever.
     async pull(controller) {
       try {
-        const { done, value } = await reader.read();
-        if (done) {
-          controller.close();
-          return;
-        }
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop();
-        for (const raw of lines) {
-          const line = raw.trim();
-          if (!line.startsWith('data:')) continue;
-          const data = line.slice(5).trim();
-          if (data === '[DONE]') continue;
-          try {
-            const token = JSON.parse(data)?.choices?.[0]?.delta?.content;
-            if (token) controller.enqueue(encoder.encode(token));
-          } catch {
-            /* ignore keep-alives / partial lines */
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) {
+            controller.close();
+            return;
           }
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop();
+          let sent = false;
+          for (const raw of lines) {
+            const line = raw.trim();
+            if (!line.startsWith('data:')) continue;
+            const data = line.slice(5).trim();
+            if (data === '[DONE]') {
+              controller.close();
+              reader.cancel().catch(() => {});
+              return;
+            }
+            try {
+              const token = JSON.parse(data)?.choices?.[0]?.delta?.content;
+              if (token) {
+                controller.enqueue(encoder.encode(token));
+                sent = true;
+              }
+            } catch {
+              /* ignore keep-alives / partial lines */
+            }
+          }
+          if (sent) return;
         }
       } catch (err) {
         controller.error(err);
