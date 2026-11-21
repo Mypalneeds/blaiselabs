@@ -70,7 +70,7 @@ export default async (req) => {
   const model =
     (userKey && (req.headers.get('x-user-model') || '').trim()) ||
     process.env.LLM_MODEL ||
-    'llama-3.1-8b-instant';
+    'openai/gpt-oss-20b';
 
   const history = (Array.isArray(body.messages) ? body.messages : [])
     .filter((m) => m && ['user', 'assistant'].includes(m.role) && typeof m.content === 'string')
@@ -90,7 +90,8 @@ export default async (req) => {
         model,
         stream: true,
         temperature: 0.8,
-        max_tokens: 350,
+        // gpt-oss models think before answering; keep that short so replies stay fast.
+        ...(/gpt-oss/.test(model) ? { reasoning_effort: 'low', max_tokens: 1200 } : { max_tokens: 350 }),
         messages: [{ role: 'system', content: systemPrompt(body.persona) }, ...history],
       }),
       signal: req.signal,

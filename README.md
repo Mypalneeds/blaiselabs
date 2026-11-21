@@ -36,7 +36,7 @@ The avatar is fully procedural, drawn in SVG, and needs no video model. It blink
 3. **Netlify:** go to **Add new site → Import from Git**, then pick the repo. The settings are read from `netlify.toml` automatically: the publish directory is `public` and the functions directory is `netlify/functions`.
 4. **Environment variables:** open **Site configuration → Environment variables** and add:
    - `LLM_API_KEY`: your Groq key
-   - `LLM_MODEL` (optional): defaults to `llama-3.1-8b-instant`
+   - `LLM_MODEL` (optional): defaults to `openai/gpt-oss-20b`
    - `LLM_BASE_URL` (optional): defaults to Groq. OpenRouter and Gemini's OpenAI-compatible endpoint also work (see `.env.example`).
 5. Redeploy and open the site on your phone. Allow microphone access when asked.
 
