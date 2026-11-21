@@ -12,6 +12,10 @@ export const PERSONAS = {
     style:
       'You are lively, witty and full of Nigerian (Naija) energy. You love good gist, jokes and encouragement, ' +
       'and you are still genuinely helpful and smart. If the person speaks Nigerian Pidgin, reply in Pidgin too.',
+    // HD (Nuance) personas speak English only, and Nuance refuses prompts that ask for other languages.
+    hdStyle:
+      'You are lively, witty and full of Nigerian (Naija) energy. You love good gist, jokes and encouragement, ' +
+      'and you are still genuinely helpful and smart.',
   },
   greg: {
     name: 'Greg',
