@@ -3,153 +3,113 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Joy — talk face to face with AI</title>
-  <meta name="description" content="Meet Joy, a real-time AI you talk to face to face in your browser. Built by Micheal Blaise, founder of Analaize Limited." />
-  <meta name="theme-color" content="#0f1115" />
+  <title>Blaiselabs — talk your business through with an AI advisor</title>
+  <meta name="description" content="Live, face-to-face video calls with AI advisors on business strategy, growth, market research, sales, technology and relationships. Built by Blaise." />
+  <meta name="theme-color" content="#ECEFE8" />
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <!-- Lobby -->
   <main id="lobby" class="lobby">
-    <header class="brand">
-      <div class="logo" aria-hidden="true">◐</div>
-      <div>
-        <h1>Joy &amp; friends</h1>
-        <p>Talk face to face with AI</p>
-      </div>
-      <button id="lobbySettings" class="icon-btn ghost" type="button" aria-label="Settings">⚙︎</button>
+    <header class="masthead">
+      <span class="wordmark">Blaiselabs</span>
+      <span class="maker">Built by Blaise</span>
     </header>
 
-    <section>
-      <h2 class="label">Choose who to talk to</h2>
-      <div id="personas" class="personas"></div>
-      <label id="hdRow" class="hd-row" hidden>
-        <input id="hdToggle" type="checkbox" />
-        <span><strong>HD mode ✨</strong><small>Live video AI by Nuance Labs: the most human feel, using one of their faces. Uses your Nuance credits.</small></span>
-      </label>
-      <div id="hdFaces" class="hd-faces" hidden></div>
-      <div id="skinSection">
-      <h2 id="skinLabel" class="label skin-label">Skin tone</h2>
-      <div id="lobbySwatches" class="swatches"></div>
-      </div>
-      <p class="hint">Tip: you can also just ask, e.g. "Can you make your skin darker?" Turn your camera on during a call so they can react to your face, and pick "Natural" voice in ⚙︎ Settings for a more human sound.</p>
+    <section class="intro">
+      <h1>Talk your business through, face to face.</h1>
+      <p>Live video calls with AI advisors who know the playbooks for strategy, growth, market research, sales, technology and relationships. Just talk; they listen and answer.</p>
     </section>
 
-    <button id="startBtn" class="primary" type="button">Start call</button>
-    <p class="fine">
-      Uses your microphone (and camera only if you turn it on). Works best in Chrome, Edge or Safari.
-      Joy, Osas and Greg are AI and will never claim to be human.
-    </p>
-    <footer class="foot">Built by Micheal Blaise · Analaize Limited</footer>
-  </main>
+    <section class="roster" aria-labelledby="roster-title">
+      <h2 id="roster-title" class="visually-hidden">Choose an advisor</h2>
+      <ul id="advisors" class="advisors"></ul>
+      <p id="setupNote" class="setup-note" hidden></p>
+    </section>
 
-  <!-- Call -->
-  <main id="call" class="call" hidden>
-    <div id="stage" class="stage"></div>
-    <video id="hdVideo" class="hd-video" autoplay playsinline></video>
-    <audio id="hdAudio" autoplay></audio>
+    <section class="disclaimer" aria-labelledby="disclaimer-title">
+      <h2 id="disclaimer-title">These advisors are AI</h2>
+      <p>They can make mistakes, misunderstand you, or be out of date. Treat what they say as a starting point, and check anything important, especially legal, tax, medical or financial decisions, with a qualified professional.</p>
+      <p>Your voice, and your camera if you turn it on, are streamed to Nuance Labs to run the call. Nothing is recorded by this site.</p>
+    </section>
 
-    <div class="topbar">
-      <div class="who"><span id="personaName">Joy</span><span class="ai-badge">AI</span><span id="hdTag" class="ai-badge hd-badge" hidden>HD</span></div>
-      <div id="status" class="status" data-state="idle">Ready</div>
-    </div>
-
-    <div id="selfWrap" class="self" hidden><video id="selfView" autoplay playsinline muted></video><span id="seeBadge" class="see-badge" hidden></span></div>
-
-    <div class="captions" aria-live="polite">
-      <p id="capAi" class="cap ai" hidden></p>
-      <p id="capYou" class="cap you" hidden></p>
-    </div>
-
-    <form id="typeForm" class="type" hidden>
-      <input id="typeInput" type="text" placeholder="Type a message…" autocomplete="off" enterkeyhint="send" />
-      <button type="submit" class="send" aria-label="Send">➤</button>
-    </form>
-
-    <nav class="controls" aria-label="Call controls">
-      <button id="btnMic" class="ctl" type="button" aria-label="Microphone" title="Microphone">
-        <svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12h-2Z"/></svg>
-      </button>
-      <button id="btnCam" class="ctl off" type="button" aria-label="Camera" title="Camera: lets them see your expressions (processed on your device)">
-        <svg viewBox="0 0 24 24"><path d="M15 8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2.5l5 3.5V7l-5 3.5V8Z"/></svg>
-      </button>
-      <button id="btnCc" class="ctl" type="button" aria-label="Captions" title="Captions">
-        <svg viewBox="0 0 24 24"><path d="M19 5H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Zm-8 7.5H9.5V12h-2v2h2v-.5H11V15H6V10h5v2.5Zm7 0h-1.5V12h-2v2h2v-.5H18V15h-5v-5h5v2.5Z"/></svg>
-      </button>
-      <button id="btnType" class="ctl" type="button" aria-label="Type instead" title="Type">
-        <svg viewBox="0 0 24 24"><path d="M20 5H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2ZM11 8h2v2h-2V8Zm0 3h2v2h-2v-2ZM8 8h2v2H8V8Zm0 3h2v2H8v-2ZM5 8h2v2H5V8Zm0 3h2v2H5v-2Zm11 5H8v-2h8v2Zm0-3h-2v-2h2v2Zm0-3h-2V8h2v2Zm3 3h-2v-2h2v2Zm0-3h-2V8h2v2Z"/></svg>
-      </button>
-      <button id="btnSettings" class="ctl" type="button" aria-label="Settings" title="Settings">
-        <svg viewBox="0 0 24 24"><path d="M19.4 13a7.5 7.5 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3h-4l-.3 2.9a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.5 7.5 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.4 7.4 0 0 0 1.7 1L11 21h4l.3-2.9a7.4 7.4 0 0 0 1.7-1l2.5 1 2-3.5L19.4 13ZM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z" transform="translate(-1 0)"/></svg>
-      </button>
-      <button id="btnEnd" class="ctl end" type="button" aria-label="End call" title="End call">
-        <svg viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .4-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85a1 1 0 0 1-1.41-.02L.29 13.08a1 1 0 0 1 0-1.41C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67a1 1 0 0 1 0 1.41l-2.48 2.47a1 1 0 0 1-1.41.02 11.3 11.3 0 0 0-2.67-1.85 1 1 0 0 1-.56-.9v-3.1A15 15 0 0 0 12 9Z"/></svg>
-      </button>
-    </nav>
-  </main>
-
-  <!-- Settings -->
-  <dialog id="settings" class="settings">
-    <form id="settingsForm" method="dialog">
-      <h2>Settings</h2>
-
-      <label>LLM API key <small>(optional — only needed if the site owner hasn't set one)</small>
-        <div class="row">
-          <input id="setKey" type="password" placeholder="gsk_… (free at console.groq.com)" autocomplete="off" />
-          <button id="clearKey" type="button" class="ghost">Clear</button>
-        </div>
-        <small>Stored only in this browser and sent to this site's function to reach the LLM.</small>
-      </label>
-
-      <label>Model <small>(used only with your own key)</small>
-        <input id="setModel" type="text" placeholder="openai/gpt-oss-20b" autocomplete="off" />
-      </label>
-
-      <label>Language
-        <select id="setLang">
-          <option value="en-US">English (US)</option>
-          <option value="en-GB">English (UK)</option>
-          <option value="en-NG">English (Nigeria)</option>
-          <option value="fr-FR">Français</option>
-          <option value="es-ES">Español</option>
-          <option value="pt-BR">Português (Brasil)</option>
-          <option value="de-DE">Deutsch</option>
-        </select>
-      </label>
-
-      <label>Voice quality
-        <select id="setEngine">
-          <option value="auto">Auto (best available)</option>
-          <option value="kokoro">Natural (free, ~90 MB one-time download)</option>
-          <option value="eleven">Studio (ElevenLabs)</option>
-          <option value="browser">Basic (device voice, instant)</option>
-        </select>
-        <small id="elevenNote">Studio voice needs ELEVENLABS_API_KEY set on Netlify. Natural voice is English-only and works best on laptops and recent phones.</small>
-      </label>
-
-      <label>Device voice <small>(used by "Basic")</small>
-        <select id="setVoice"></select>
-      </label>
-
-      <div class="field">
-        <span id="settingsSkinLabel" class="field-label">Skin tone</span>
-        <div id="settingsSwatches" class="swatches"></div>
+    <footer class="colophon">
+      <div class="colophon-maker">
+        <span class="wordmark small">Blaiselabs</span>
+        <p>Built by Micheal Blaise, founder of Analaize Limited, Lagos.</p>
       </div>
+      <div class="support">
+        <h2>Support Blaise’s journey</h2>
+        <p class="support-number" id="supportNumber"></p>
+        <div class="support-actions">
+          <button type="button" id="copyNumber" class="link-button">Copy number</button>
+          <a id="callNumber" class="link-button">Call</a>
+          <a id="whatsappNumber" class="link-button" target="_blank" rel="noopener">WhatsApp</a>
+        </div>
+      </div>
+    </footer>
+  </main>
 
-      <label class="check"><input id="setInterrupt" type="checkbox" /> Let me interrupt while they're talking</label>
-      <label class="check"><input id="setSeeMe" type="checkbox" /> When my camera is on, read my expressions <small>(on-device only)</small></label>
-      <label class="check"><input id="setMemory" type="checkbox" /> Remember our conversations on this device</label>
-      <button id="forgetBtn" type="button" class="ghost danger-text">Forget all conversations</button>
+  <main id="call" class="call" hidden>
+    <header class="call-bar">
+      <div class="call-who">
+        <span id="callName" class="call-name">Joy</span>
+        <span class="call-role">AI advisor</span>
+      </div>
+      <div class="call-meta">
+        <span id="callStatus" class="call-status" data-state="connecting">Connecting</span>
+        <span id="callTimer" class="call-timer">0:00</span>
+      </div>
+    </header>
 
-      <div class="actions">
-        <button id="settingsCancel" type="button" class="ghost">Cancel</button>
-        <button type="submit" class="primary">Save</button>
+    <div class="stage">
+      <div id="waiting" class="waiting">
+        <span id="waitingName" class="waiting-name">Joy</span>
+        <p id="waitingText">Connecting. This can take up to 30 seconds.</p>
+      </div>
+      <video id="advisorVideo" class="advisor-video" autoplay playsinline></video>
+      <audio id="advisorAudio" autoplay></audio>
+      <span class="watermark" aria-hidden="true">Built by Blaise</span>
+      <figure id="selfWrap" class="self" hidden>
+        <video id="selfView" autoplay playsinline muted></video>
+      </figure>
+    </div>
+
+    <footer class="call-foot">
+      <div class="controls">
+        <button id="micBtn" class="control" type="button" aria-pressed="true" aria-label="Mute microphone">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12h-2Z"/></svg>
+          <span>Mic</span>
+        </button>
+        <button id="camBtn" class="control" type="button" aria-pressed="false" aria-label="Turn camera on">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2.5l5 3.5V7l-5 3.5V8Z"/></svg>
+          <span>Camera</span>
+        </button>
+        <button id="endBtn" class="control end" type="button" aria-label="End call">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .4-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85a1 1 0 0 1-1.41-.02L.29 13.08a1 1 0 0 1 0-1.41C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67a1 1 0 0 1 0 1.41l-2.48 2.47a1 1 0 0 1-1.41.02 11.3 11.3 0 0 0-2.67-1.85 1 1 0 0 1-.56-.9v-3.1A15 15 0 0 0 12 9Z"/></svg>
+          <span>End</span>
+        </button>
+      </div>
+      <p class="call-disclaimer">AI advisor. It can make mistakes, so check important information.</p>
+    </footer>
+  </main>
+
+  <dialog id="consent" class="consent" aria-labelledby="consent-title">
+    <form method="dialog">
+      <h2 id="consent-title">Before your first call</h2>
+      <p>You’re about to talk with an AI. It can make mistakes and isn’t a substitute for professional legal, tax, medical or financial advice.</p>
+      <p>Your microphone (and camera, if you turn it on) is streamed to Nuance Labs to run the call.</p>
+      <div class="consent-actions">
+        <button value="cancel" class="secondary">Not now</button>
+        <button value="ok" class="primary" id="consentOk">I understand, start the call</button>
       </div>
     </form>
   </dialog>
 
-  <div id="toast" class="toast" role="status" hidden></div>
+  <div id="notice" class="notice" role="status" hidden></div>
 
   <script type="module" src="js/app.js"></script>
 </body>
