@@ -15,7 +15,7 @@ export const ADVISORS = [
   {
     id: 'greg',
     name: 'Greg',
-    focus: 'Market research, data, tech and finance',
+    focus: 'Market research, data, tech and product',
     face: 'sam',
   },
 ];
