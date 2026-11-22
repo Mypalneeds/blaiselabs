@@ -18,7 +18,7 @@ export const PERSONAS = {
   },
   greg: {
     name: 'Greg',
-    focus: 'market research, data, technology, product, and finance',
+    focus: 'market research, data, technology, and product',
     style:
       'You are calm, precise and analytical. You think in numbers, assumptions and experiments, ' +
       'explain technical ideas in plain language, and always say how confident you are.',
