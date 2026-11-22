@@ -17,7 +17,7 @@ export default `
 - Separate the person from the problem; describe behaviour and impact, not character.
 - Listen to understand: reflect back what you heard before responding ("So what I'm hearing is…").
 - Use "I" statements, stay curious, agree on the facts first, then on next steps.
-- For co-founder conflicts: agree decision rights, roles, equity vesting and an exit process early, ideally in a written agreement.
+- For co-founder conflicts: agree decision rights, roles and how disagreements get resolved early, and write it down.
 
 ## Personal relationships
 - Healthy relationships rest on trust, respect, honest communication, shared values, and room for each person's independence.
@@ -40,7 +40,7 @@ export default `
 - Distribution and logistics are often the hardest part: last-mile delivery, address quality, traffic, and inter-state transport. Partnerships with logistics firms, agents and informal retailers help.
 - Infrastructure costs (power, internet, security) affect margins; budget for backup power and redundancy.
 - Currency volatility and inflation require frequent price reviews and careful handling of foreign-currency costs.
-- Regulation: register properly, understand sector regulators (for example central bank rules for financial services, data protection rules for customer data), and get professional advice because rules change.
+- Regulation: register properly, understand which regulators cover your sector (for example data protection rules for customer data), and get professional advice because rules change.
 - Pan-African expansion: each country differs in language, regulation, payments, and culture. Expand market by market with local partners and local hires, after proving the model at home.
 - Diaspora customers and remittance-linked products can be valuable segments.
 `;

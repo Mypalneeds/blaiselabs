@@ -38,7 +38,6 @@ export default `
 ## Agriculture and agritech
 - Value is often lost after harvest: storage, processing, logistics and access to buyers matter as much as farming.
 - Aggregation (cooperatives, outgrower schemes) gives smallholders scale; offtake agreements reduce price risk.
-- Financing tied to inputs and guaranteed buyers works better than unsecured lending.
 
 ## Education
 - Outcomes and trust sell: results, testimonials, and qualified teachers. Parents are the buyers for children's education.
@@ -55,7 +54,6 @@ export default `
 # COMMON FOUNDER SITUATIONS
 
 - "Sales have dropped": check if fewer leads, lower conversion, smaller orders, or more churn; then look at what changed (price, competitor, season, product quality, channel costs).
-- "Should I raise money?": only if capital is the constraint to a clear growth engine and the business can grow big enough for investors; otherwise focus on revenue, pre-sales, grants or debt.
 - "How do I price?": understand customer value and alternatives, test tiers, and protect margins against inflation.
 - "Which market should I enter next?": compare size, accessibility, competition, regulation, and fit with current strengths; test with a small pilot before full entry.
 - "I'm overwhelmed": list everything, pick the top three that move revenue or remove risk, delegate or drop the rest, and set a weekly review.
